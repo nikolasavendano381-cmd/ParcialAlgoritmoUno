@@ -1,0 +1,254 @@
+import java.util.Scanner;
+
+/**
+ * TaxiYopal S.A.S. — Tarificador inteligente de viajes
+ * Parcial — Estructuras de control condicional
+ * Solo usa: if, if-else, else if, condicionales anidadas, &&, ||, !
+ */
+public class TaxiYopal {
+
+    public static void main(String[] args) {
+
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("==============================================");
+        System.out.println("   TAXIYOPAL S.A.S. — Tarificador de Viajes  ");
+        System.out.println("==============================================");
+
+        // ---------------------------------------------------------------
+        // LECTURA DE DATOS
+        // ---------------------------------------------------------------
+
+        System.out.print("Tipo de vehículo (1=Motocarro, 2=Automóvil, 3=Camioneta 4x4): ");
+        int V = scanner.nextInt();
+
+        System.out.print("Distancia del viaje en kilómetros: ");
+        double km = scanner.nextDouble();
+
+        System.out.print("Hora de inicio del viaje (0-23): ");
+        int hora = scanner.nextInt();
+
+        System.out.print("¿Es domingo o festivo? (S/N): ");
+        String inputD = scanner.next().toUpperCase();
+        char D = inputD.charAt(0);
+
+        System.out.print("¿Hay lluvia fuerte en la vía? (S/N): ");
+        String inputL = scanner.next().toUpperCase();
+        char L = inputL.charAt(0);
+
+        System.out.print("¿El viaje es rural (fuera del casco urbano)? (S/N): ");
+        String inputR = scanner.next().toUpperCase();
+        char R = inputR.charAt(0);
+
+        System.out.print("Tipo de pasajero (1=Frecuente, 2=Estudiante, 3=Adulto mayor, 4=Ocasional): ");
+        int P = scanner.nextInt();
+
+        System.out.print("Edad del pasajero: ");
+        int edad = scanner.nextInt();
+
+        scanner.close();
+
+        // ---------------------------------------------------------------
+        // REGLA 0 — VALIDACIONES OBLIGATORIAS (Sección 5)
+        // Si alguna entrada es inválida, se muestra el mensaje y se termina.
+        // ---------------------------------------------------------------
+
+        // Comentario 1: Validamos cada campo en orden antes de cualquier cálculo.
+        if (V < 1 || V > 3) {
+            System.out.println("Error: Tipo de vehículo no válido.");
+            return;
+        }
+
+        if (km <= 0) {
+            System.out.println("Error: Distancia inválida.");
+            return;
+        }
+
+        if (hora < 0 || hora > 23) {
+            System.out.println("Error: Hora inválida.");
+            return;
+        }
+
+        // Usamos operador && y || para validar los tres booleanos S/N juntos
+        boolean dValido = (D == 'S' || D == 'N');
+        boolean lValido = (L == 'S' || L == 'N');
+        boolean rValido = (R == 'S' || R == 'N');
+
+        if (!dValido || !lValido || !rValido) {
+            System.out.println("Error: Respuesta S/N inválida.");
+            return;
+        }
+
+        if (P < 1 || P > 4) {
+            System.out.println("Error: Tipo de pasajero no válido.");
+            return;
+        }
+
+        if (edad < 0 || edad > 120) {
+            System.out.println("Error: Edad fuera de rango.");
+            return;
+        }
+
+        // ---------------------------------------------------------------
+        // REGLA 1 — Tarifa base por tipo de vehículo
+        // ---------------------------------------------------------------
+
+        // Comentario 2: Se determinan tarifa/km y tarifa mínima según el tipo de vehículo.
+        double tarifaPorKm;
+        double tarifaMinima;
+        String nombreVehiculo;
+
+        // Cadena if-else if-else (mínimo tres ramas) — Requisito técnico #10
+        if (V == 1) {
+            tarifaPorKm    = 1200;
+            tarifaMinima   = 5000;
+            nombreVehiculo = "Motocarro";
+        } else if (V == 2) {
+            tarifaPorKm    = 2000;
+            tarifaMinima   = 8000;
+            nombreVehiculo = "Automóvil";
+        } else {
+            tarifaPorKm    = 2800;
+            tarifaMinima   = 12000;
+            nombreVehiculo = "Camioneta 4x4";
+        }
+
+        double subtotal = km * tarifaPorKm;
+
+        // Variable booleana intermedia — Requisito técnico #13
+        boolean seAplicoTarifaMinima1 = subtotal < tarifaMinima;
+
+        if (seAplicoTarifaMinima1) {
+            subtotal = tarifaMinima;
+        }
+
+        // ---------------------------------------------------------------
+        // REGLA 2 — Recargos acumulativos sobre el subtotal
+        // ---------------------------------------------------------------
+
+        // Comentario 3: Cada condición suma su porcentaje; todos se aplican al subtotal de una vez.
+        double porcentajeRecargo = 0;
+
+        // Operador || para hora nocturna — Requisito técnico #12
+        boolean esNocturno = (hora >= 22 || hora < 5);
+        if (esNocturno) {
+            porcentajeRecargo += 20;
+        }
+
+        if (D == 'S') {
+            porcentajeRecargo += 15;
+        }
+
+        if (L == 'S') {
+            porcentajeRecargo += 10;
+        }
+
+        if (R == 'S') {
+            porcentajeRecargo += 25;
+        }
+
+        double valorRecargo    = subtotal * porcentajeRecargo / 100.0;
+        double totalConRecargo = subtotal + valorRecargo;
+
+        // ---------------------------------------------------------------
+        // REGLA 3 — Descuento por tipo de pasajero
+        // ---------------------------------------------------------------
+
+        // Comentario 4: Validación de consistencia para adulto mayor antes de aplicar descuento.
+        // Condicional anidada con && — Requisito técnico #11 y #12
+        if (P == 3 && edad < 60) {
+            System.out.println("Aviso: Inconsistencia: edad no corresponde a adulto mayor. Se reasigna a pasajero ocasional.");
+            P = 4;
+        }
+
+        double porcentajeDescuento;
+        String tipoP;
+
+        if (P == 1) {
+            porcentajeDescuento = 10;
+            tipoP = "Frecuente";
+        } else if (P == 2) {
+            porcentajeDescuento = 8;
+            tipoP = "Estudiante con carnet";
+        } else if (P == 3) {
+            porcentajeDescuento = 12;
+            tipoP = "Adulto mayor";
+        } else {
+            porcentajeDescuento = 0;
+            tipoP = "Ocasional";
+        }
+
+        double valorDescuento = totalConRecargo * porcentajeDescuento / 100.0;
+        double totalFinal     = totalConRecargo - valorDescuento;
+
+        // ---------------------------------------------------------------
+        // REGLA 4 — Tarifa solidaria de Yopal (solo viajes urbanos)
+        // ---------------------------------------------------------------
+
+        // Comentario 5: Si el viaje es urbano y el total quedó por debajo de la tarifa mínima,
+        // se ajusta y se notifica. Estructura if-else simple — Requisito técnico #9
+        boolean seAplicoTarifaSolidaria = false;
+
+        if (R == 'N' && totalFinal < tarifaMinima) {
+            totalFinal = tarifaMinima;
+            seAplicoTarifaSolidaria = true;
+        }
+
+        // ---------------------------------------------------------------
+        // SALIDA — Recibo detallado
+        // ---------------------------------------------------------------
+
+        System.out.println();
+        System.out.println("==============================================");
+        System.out.println("               RECIBO DE VIAJE               ");
+        System.out.println("==============================================");
+        System.out.printf("Vehículo          : %s%n", nombreVehiculo);
+        System.out.printf("Distancia         : %.2f km%n", km);
+        System.out.println("----------------------------------------------");
+        System.out.printf("Subtotal base     : $%,.0f%n", km * tarifaPorKm);
+
+        if (seAplicoTarifaMinima1) {
+            System.out.printf("  → Ajustado a tarifa mínima: $%,.0f%n", tarifaMinima);
+        }
+
+        System.out.printf("Subtotal (Regla 1): $%,.0f%n", subtotal);
+        System.out.println("----------------------------------------------");
+
+        if (porcentajeRecargo > 0) {
+            System.out.printf("Recargo total     : %.0f%%  (+$%,.0f)%n", porcentajeRecargo, valorRecargo);
+            if (esNocturno) {
+                System.out.println("  · Nocturno (+20%)");
+            }
+            if (D == 'S') {
+                System.out.println("  · Domingo/Festivo (+15%)");
+            }
+            if (L == 'S') {
+                System.out.println("  · Lluvia fuerte (+10%)");
+            }
+            if (R == 'S') {
+                System.out.println("  · Viaje rural (+25%)");
+            }
+        } else {
+            System.out.println("Recargo total     : 0%  (sin recargo)");
+        }
+
+        System.out.printf("Total con recargos: $%,.0f%n", totalConRecargo);
+        System.out.println("----------------------------------------------");
+        System.out.printf("Tipo de pasajero  : %s%n", tipoP);
+
+        if (porcentajeDescuento > 0) {
+            System.out.printf("Descuento         : %.0f%%  (-$%,.0f)%n", porcentajeDescuento, valorDescuento);
+        } else {
+            System.out.println("Descuento         : 0%  (sin descuento)");
+        }
+
+        System.out.println("----------------------------------------------");
+        System.out.printf("TOTAL A PAGAR     : $%,.0f%n", totalFinal);
+
+        if (seAplicoTarifaSolidaria) {
+            System.out.println("  → Se aplicó tarifa solidaria mínima.");
+        }
+
+        System.out.println("==============================================");
+    }
+}
